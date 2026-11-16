@@ -1,0 +1,67 @@
+name: ifc7 push
+description: Push new ifc7.dev revisions for every owned interface in ifc.yaml whose file has changed.
+author: ifc7
+branding:
+  icon: upload-cloud
+  color: green
+
+inputs:
+  working-directory:
+    description: Directory containing ifc.yaml.
+    default: .
+  organization:
+    description: Slug of the ifc7 organization whose agent the workflow acts as. Required unless `token` is set.
+    required: true
+  agent:
+    description: Name or ID of the agent to act as. Only needed when several of the organization's agents trust this workflow.
+    default: ""
+  ifc-version:
+    description: Release of the ifc CLI to install (a tag such as v0.1.0, or "latest").
+    default: latest
+  notes:
+    description: Revision notes. Defaults to the HEAD commit subject followed by its short SHA.
+    default: ""
+  hub-url:
+    description: Base URL of the ifc7 hub.
+    default: https://ifc7.dev
+  audience:
+    description: Audience requested for the GitHub OIDC token. Defaults to the host of `hub-url`.
+    default: ""
+  token:
+    description: An ifc7 access token to use instead of exchanging a GitHub OIDC token.
+    required: false
+    default: ""
+
+outputs:
+  pushed:
+    description: JSON array of owned interface names that received a new revision.
+    value: ${{ steps.push.outputs.pushed }}
+  skipped:
+    description: JSON array of owned interface names that were skipped (for example, no ref in ifc.yaml).
+    value: ${{ steps.push.outputs.skipped }}
+  result:
+    description: The full JSON result reported by `ifc push --json`.
+    value: ${{ steps.push.outputs.result }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install ifc
+      shell: bash
+      env:
+        INPUT_IFC_VERSION: ${{ inputs.ifc-version }}
+      run: '"$GITHUB_ACTION_PATH/scripts/install.sh"'
+
+    - name: Push revisions
+      id: push
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        INPUT_NOTES: ${{ inputs.notes }}
+        INPUT_HUB_URL: ${{ inputs.hub-url }}
+        INPUT_AUDIENCE: ${{ inputs.audience }}
+        INPUT_ORGANIZATION: ${{ inputs.organization }}
+        INPUT_AGENT: ${{ inputs.agent }}
+        INPUT_TOKEN: ${{ inputs.token }}
+      run: '"$GITHUB_ACTION_PATH/scripts/push.sh"'
