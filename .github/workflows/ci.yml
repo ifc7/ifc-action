@@ -15,6 +15,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      # The action runs its scripts directly, so a script committed without the executable bit fails
+      # on every runner even though the tests (which call them through bash) pass.
+      - name: Scripts are executable
+        run: |
+          bad=$(git ls-files -s -- 'scripts/*.sh' 'test/*.sh' | awk '$1 != "100755" {print $4}')
+          if [ -n "$bad" ]; then
+            echo "::error::not executable in git: $bad (run: git update-index --chmod=+x <file>)"
+            exit 1
+          fi
+
       - name: shellcheck
         run: shellcheck scripts/*.sh test/*.sh
 
