@@ -36,5 +36,8 @@ jobs:
       - name: Test push
         run: bash test/push_test.sh
 
+      - name: Test lint
+        run: bash test/lint_test.sh
+
       - name: Test install
         run: bash test/install_test.sh

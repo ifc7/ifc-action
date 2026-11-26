@@ -1,0 +1,112 @@
+name: ifc7 lint
+description: Lint ifc7 interfaces and check governance gates before they reach the hub, with findings as annotations.
+author: ifc7
+branding:
+  icon: check-circle
+  color: green
+
+inputs:
+  working-directory:
+    description: Directory containing ifc.yaml.
+    default: .
+  interfaces:
+    description: Owned interface names or specification paths to lint, separated by spaces or newlines. Defaults to every owned interface.
+    default: ""
+  gate:
+    description: Evaluate the hub's gates for this stage, `push` or `release`, with each interface's effective policy. Empty skips the hub's gates.
+    default: push
+  hub:
+    description: With `gate` empty, still lint with the hub's policy (ruleset, weights and waivers) when `true`.
+    default: "false"
+  release-version:
+    description: The version being released. Required with `gate: release`.
+    default: ""
+  ruleset:
+    description: A local OpenLint ruleset file to lint with instead of the hub's. Needs `gate` set to empty.
+    default: ""
+  baseline:
+    description: A specification file to compare with, or `none`. Defaults to the release the hub compares with.
+    default: ""
+  baseline-version:
+    description: The version of the `baseline` file.
+    default: ""
+  fail-on:
+    description: Also fail on any unwaived finding at this severity or above (error, warn, info or hint).
+    default: ""
+  min-score:
+    description: Also fail when an interface scores below this.
+    default: ""
+  breaking:
+    description: Also fail on breaking changes against the baseline (`block`, or `requireMajor` with `gate: release`).
+    default: ""
+  new-only:
+    description: With `fail-on`, count only findings that are not in the baseline.
+    default: "false"
+  strict:
+    description: Fail on advisory gates too.
+    default: "false"
+  annotations:
+    description: Lowest finding severity to annotate (error, warn, info or hint), or `none`.
+    default: warn
+  organization:
+    description: Slug of the ifc7 organization whose agent the workflow acts as. Needed for the hub's policy unless `token` is set.
+    default: ""
+  agent:
+    description: Name or ID of the agent to act as. Only needed when several of the organization's agents trust this workflow.
+    default: ""
+  ifc-version:
+    description: Release of the ifc CLI to install (a tag such as v0.0.3, or "latest").
+    default: latest
+  hub-url:
+    description: Base URL of the ifc7 hub.
+    default: https://ifc7.dev
+  audience:
+    description: Audience requested for the GitHub OIDC token. Defaults to the host of `hub-url`.
+    default: ""
+  token:
+    description: An ifc7 access token to use instead of exchanging a GitHub OIDC token.
+    required: false
+    default: ""
+
+outputs:
+  passed:
+    description: '"true" when every interface was linted and no blocking gate failed.'
+    value: ${{ steps.lint.outputs.passed }}
+  result:
+    description: The full JSON result reported by `ifc lint --json`.
+    value: ${{ steps.lint.outputs.result }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install ifc
+      shell: bash
+      env:
+        INPUT_IFC_VERSION: ${{ inputs.ifc-version }}
+      run: '"$GITHUB_ACTION_PATH/../scripts/install.sh"'
+
+    - name: Lint and check gates
+      id: lint
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        INPUT_INTERFACES: ${{ inputs.interfaces }}
+        INPUT_GATE: ${{ inputs.gate }}
+        INPUT_HUB: ${{ inputs.hub }}
+        INPUT_RELEASE_VERSION: ${{ inputs.release-version }}
+        INPUT_RULESET: ${{ inputs.ruleset }}
+        INPUT_BASELINE: ${{ inputs.baseline }}
+        INPUT_BASELINE_VERSION: ${{ inputs.baseline-version }}
+        INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        INPUT_MIN_SCORE: ${{ inputs.min-score }}
+        INPUT_BREAKING: ${{ inputs.breaking }}
+        INPUT_NEW_ONLY: ${{ inputs.new-only }}
+        INPUT_STRICT: ${{ inputs.strict }}
+        INPUT_ANNOTATIONS: ${{ inputs.annotations }}
+        INPUT_HUB_URL: ${{ inputs.hub-url }}
+        INPUT_AUDIENCE: ${{ inputs.audience }}
+        INPUT_ORGANIZATION: ${{ inputs.organization }}
+        INPUT_AGENT: ${{ inputs.agent }}
+        INPUT_TOKEN: ${{ inputs.token }}
+      run: '"$GITHUB_ACTION_PATH/../scripts/lint.sh"'
