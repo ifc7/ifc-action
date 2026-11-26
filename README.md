@@ -8,6 +8,8 @@ For each `own` entry with a `ref`, the action compares the file on disk with the
 
 See [docs/how-it-works.md](docs/how-it-works.md) for the details of each step.
 
+To check pull requests against your organization's governance gates before they merge, use [`ifc7/ifc-action/lint`](docs/lint.md).
+
 ## Usage
 
 ```yaml
@@ -91,6 +93,7 @@ Set `hub-url`. The OIDC audience defaults to the hub's host. Override `audience`
 
 ```bash
 bash test/push_test.sh      # runs scripts/push.sh against stub ifc and curl binaries
+bash test/lint_test.sh      # runs scripts/lint.sh against stub ifc and curl binaries
 bash test/install_test.sh   # runs scripts/install.sh against a fake release
 shellcheck scripts/*.sh test/*.sh
 actionlint
